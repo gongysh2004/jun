@@ -1,45 +1,41 @@
-# Copyright 2021 The Kubernetes Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
 """
-This example demonstrates how to list cluster nodes using dynamic client.
-https://github.com/kubernetes-client/python.git
 
+
+# curl -s http://localhost:8000/usage_with_tasks | jq
 {
+  "usage": {
     "compute2": {
-        "allocable_cpu": 32,
-        "allocable_memory": 64190,
-        "allocated_cpu": 2,
-        "allocated_memory": 1024
-    },
-    "compute3": {
-        "allocable_cpu": 31,
-        "allocable_memory": 60575,
-        "allocated_cpu": 13,
-        "allocated_memory": 31278
+      "allocable_cpu": 32,
+      "allocable_memory": 62,
+      "allocated_cpu": 1,
+      "allocated_memory": 1
     },
     "edgenode-7sjo": {
-        "allocable_cpu": 32,
-        "allocable_memory": 64190,
-        "allocated_cpu": 2,
-        "allocated_memory": 1024
+      "allocable_cpu": 32,
+      "allocable_memory": 62
     }
+  },
+  "tasks": [
+    {
+      "name": "task-a",
+      "host": "compute2",
+      "ip": "10.10.12.10"
+    }
+  ]
 }
 
-curl --cert /etc/kubernetes/pki/apiserver-kubelet-client.crt \
-    --key /etc/kubernetes/pki/apiserver-kubelet-client.key \
-        -k https://lb.kubesphere.local:6443/api/v1/pods
+
+# curl -s -X 'POST'   'http://127.0.0.1:8000/tasks-a'   -H 'accept: application/json'   -d '' | jq
+{
+  "action": "deleted"
+}
+
+# curl -s -X 'POST'   'http://127.0.0.1:8000/tasks-a'   -H 'accept: application/json'   -d '' | jq
+{
+  "action": "started"
+}
+
 """
 
 import json
@@ -60,23 +56,9 @@ from pydantic import BaseModel
 app = FastAPI()
 
 
-class Task(BaseModel):
-    name: str
-
-
 @app.get("/")
 def read_root():
     return {"Hello": "自动任务调度系统"}
-
-
-@app.get("/usage")
-def get_usage():
-     return _caculate_usage()
-
-
-@app.get("/tasks")
-def get_tasks():
-    return {'tasks': _list_tasks()}
 
 
 @app.get("/usage_with_tasks")
@@ -118,6 +100,7 @@ def _start_or_delete_task(name: str):
     else:
         _delete_task(name)
     return res
+
 
 def _start_task(task_yaml: str):
     config.load_kube_config()
@@ -169,6 +152,7 @@ def _cpu_value(cpu):
         cpu_int=int(cpu)*1.0
     return int(cpu_int)
 
+
 def _caculate_usage():
     # Creating a dynamic client
     d_client = dynamic.DynamicClient(
@@ -210,8 +194,10 @@ def _caculate_usage():
         _node_dict.update(allocated_dic.get(node_name, {}))
     return nodes_dict
 
+
 if __name__ == "__main__1":
     _caculate_usage()
+
 
 if __name__ == "__main__":
     import uvicorn
